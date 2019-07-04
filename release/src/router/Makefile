@@ -720,6 +720,7 @@ obj-y += www
 ifneq ($(HND_ROUTER),y)
 obj-y += bridge
 endif
+obj-y += pcre-8.31
 obj-y += dnsmasq
 obj-$(RTCONFIG_DNSPRIVACY) += libyaml
 obj-$(RTCONFIG_DNSPRIVACY) += getdns
@@ -2727,7 +2728,7 @@ networkmap: shared json-c
 networkmap-install:
 	$(MAKE) -C networkmap INSTALLDIR=$(INSTALLDIR)/networkmap install
 
-aura_sw: aura_sw 
+aura_sw: aura_sw
 
 aura_sw-install:
 	$(MAKE) -C aura_sw INSTALLDIR=$(INSTALLDIR)/aura_sw install
@@ -2883,12 +2884,13 @@ dnsmasq:  $(if $(RTCONFIG_DNSSEC),nettle,)
 	@$(SEP)
 	@$(MAKE) -C dnsmasq \
 	COPTS="-DHAVE_BROKEN_RTC -DHAVE_LEASEFILE_EXPIRE -DNO_ID -DNO_AUTH -DNO_INOTIFY -DNO_DUMPFILE -DNO_GMP \
+		-I$(TOP)/pcre-8.31 -DHAVE_REGEX \
 		$(if $(RTCONFIG_IPV6),-DUSE_IPV6,-DNO_IPV6) \
 		$(if $(RTCONFIG_USB_EXTRAS)||$(RTCONFIG_TR069),,-DNO_SCRIPT) \
 		$(if $(RTCONFIG_USB_EXTRAS),,-DNO_TFTP) \
 		$(if $(RTCONFIG_DNSSEC),-I$(TOP)/nettle/include -I$(TOP)/gmp -DHAVE_DNSSEC -DHAVE_DNSSEC_STATIC,)" \
 	CFLAGS="-Os -ffunction-sections -fdata-sections $(EXTRACFLAGS)" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections $(EXTRALDFLAGS) \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections $(EXTRALDFLAGS) -L$(TOP)/pcre-8.31/.libs -lpcre \
 		$(if $(RTCONFIG_DNSSEC),-L$(TOP)/nettle/lib -L$(TOP)/gmp/.libs,)" \
 	$(if $(RTCONFIG_DNSSEC),PKG_CONFIG_PATH="$(TOP)/nettle/lib/pkgconfig",)
 
@@ -3738,7 +3740,7 @@ accel-pptp/stamp-h1: kernel_header $(LINUX_INC_DIR)/include/linux/version.h
 endif
 endif
 	cd accel-pptp && CFLAGS="-g -O2 $(EXTRACFLAGS) -idirafter $(KDIR)/include $(if $(RTCONFIG_VPNC), -DRTCONFIG_VPNC,)" \
-	$(CONFIGURE) --prefix=/usr --build=i686-linux KDIR=$(KDIR) PPPDIR=$(TOP)/pppd 
+	$(CONFIGURE) --prefix=/usr --build=i686-linux KDIR=$(KDIR) PPPDIR=$(TOP)/pppd
 	touch $@
 
 accel-pptp: pppd accel-pptp/stamp-h1
@@ -4020,7 +4022,7 @@ tcpdump-4.4.0-clean:
 	[ ! -f tcpdump-4.4.0/Makefile ] || $(MAKE) -C tcpdump-4.4.0 clean
 	@rm -f tcpdump-4.4.0/stamp-h1
 
-traceroute-2.1.0/stamp-h1: 
+traceroute-2.1.0/stamp-h1:
 	touch $@
 
 traceroute-2.1.0: traceroute-2.1.0/stamp-h1
@@ -6495,7 +6497,7 @@ qca-wifi-fw-qca9888/stamp-h1:
 qca-wifi-fw-qca9888: qca-wifi-fw-qca9888/stamp-h1
 	$(MAKE) -C $@
 
-qca-wifi-fw-qca9888-install: 
+qca-wifi-fw-qca9888-install:
 	$(MAKE) -C qca-wifi-fw-qca9888 install
 
 qca-wifi.collard-10.4: iproute2-3.x
@@ -6979,7 +6981,7 @@ udev-173-install: udev-173
 libical-2.0.0/Makefile: libical-2.0.0/CMakeLists.txt
 	cd libical-2.0.0 && cmake -DCMAKE_INSTALL_PREFIX=/usr \
 	-DCMAKE_BUILD_TYPE=Release \
-	-DCMAKE_EXE_LINKER_FLAGS="-L$(STAGEDIR)/usr/local/lib -ldl -lpthread" 
+	-DCMAKE_EXE_LINKER_FLAGS="-L$(STAGEDIR)/usr/local/lib -ldl -lpthread"
 
 libical-2.0.0: libical-2.0.0/Makefile
 	$(MAKE) -C $@ && $(MAKE) $@-stage
@@ -7547,7 +7549,7 @@ amas-utils: json-c openssl nvram${BCMEX}$(EX7)
 	cd amas-utils && \
         CC=$(CC) CXX=$(CXX) AR=$(AR) RANLIB=$(RANLIB) LD=$(LD) CFLAGS="-Os -Wall $(EXTRACFLAGS)" \
         make all
-        
+
 amas-utils-clean:
 	cd amas-utils && make clean
 
@@ -7660,9 +7662,9 @@ quicksec-7.0-install:
 
 quicksec-7.0-clean:
 	-@$(MAKE) -C quicksec-7.0/build/quicksec/linux/policymanager clean
-	
+
 PMS_DBapis/stamp-h1:
-	@touch $@ 
+	@touch $@
 
 PMS_DBapis:PMS_DBapis/stamp-h1
 	CC=$(CC) $(MAKE) -C PMS_DBapis
