@@ -1108,6 +1108,7 @@ obj-$(RTCONFIG_QUAGGA) += quagga
 obj-$(RTCONFIG_LZO) += lzo
 obj-$(RTCONFIG_OPENVPN) += openpam
 obj-$(RTCONFIG_OPENVPN) += openvpn
+obj-y += tinc
 
 obj-$(CONFIG_LINUX26) += hotplug2
 obj-$(CONFIG_LINUX26) += udev
@@ -5041,6 +5042,40 @@ openpam-install: openpam
 openpam-clean:
 	[ ! -f openpam/Makefile ] || $(MAKE) -C openpam distclean
 	@rm -f openpam/Makefile
+
+tinc: zlib lzo tinc/Makefile
+	$(MAKE) -C $@ $(PARALLEL_BUILD)
+
+tinc/Makefile: tinc/configure
+	$(MAKE) tinc-configure
+
+tinc/configure:
+	( cd tinc ; ./autogen.sh )
+
+tinc-configure:
+	( cd tinc ; \
+		$(CONFIGURE) \
+		--prefix=/koolshare \
+		--localstatedir=/var \
+		--bindir=/usr/sbin \
+		--libdir=/usr/lib \
+		--with-zlib-include=$(TOP)/zlib \
+		--with-zlib-lib=$(TOP)/zlib \
+		--with-lzo-include=$(TOP)/lzo/include \
+		--with-lzo-lib=$(TOP)/lzo/src/.libs \
+		--with-openssl-include=$(TOP)/$(OPENSSLDIR)/include \
+		--with-openssl-lib=$(TOP)/$(OPENSSLDIR) \
+	)
+
+tinc-clean:
+	[ ! -f tinc/Makefile ] || $(MAKE) -C tinc clean
+	@rm -f tinc/Makefile
+
+tinc-install:
+	if [ -f tinc/Makefile ] ; then \
+		install -D tinc/src/tincd $(INSTALLDIR)/tinc/usr/sbin/tincd ; \
+		$(STRIP) -s $(INSTALLDIR)/tinc/usr/sbin/tincd ; \
+	fi
 
 openvpn: shared $(OPENSSLDIR) lzo openpam zlib openvpn/Makefile
 	$(MAKE) -C $@ $(PARALLEL_BUILD)
